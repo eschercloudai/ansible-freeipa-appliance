@@ -8,6 +8,8 @@
 - hosts: ipaservers
   serial: 1
   tasks:
+    # This is intentionally repeated in case something went wrong and it wasn't deleted at the end of the bootstrap
+    # that code will not re-run if the state file exists so remove this at your peril
     - name: remove freeipa {{ipa_container_type}} bootstrap container
       containers.podman.podman_container:
         name: "freeipa-{{ipa_container_type}}-bootstrap"
@@ -60,3 +62,15 @@
       when:
         - not ipa_container['container']['State']['Running'] | bool
         - ipa_container_service_state == 'started'
+  
+  handlers:
+    - name: enable ipa-podman container
+      systemd:
+        name: ipa-podman.service
+        enabled: yes
+      become: true
+
+    - name: reload systemd units
+      systemd:
+        daemon_reload: yes
+      become: true
