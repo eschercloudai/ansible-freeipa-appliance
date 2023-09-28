@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if podman inspect "$1" | grep --q '"Running": true'; then
-  if podman logs "$1" | grep  -e "FreeIPA server configured." -e "FreeIPA server started"; then
+  if podman logs "$1" | grep  -e "FreeIPA server configured." -e "Setup complete" -e "FreeIPA server started"; then
     exit 0
   else
     echo not there yet
