@@ -1,0 +1,23 @@
+# ipa-podman.service
+
+[Unit]
+Description=Podman container-freeipa-{{ ipa_container_type }}.service
+Documentation=man:podman-generate-systemd(1)
+Wants=network.target
+After=network-online.target 
+
+
+[Service]
+Environment=PODMAN_SYSTEMD_UNIT=%n
+Restart=on-failure
+RestartSec=10s
+ExecStart=/usr/bin/podman start  "freeipa-{{ipa_container_type}}"
+ExecStop=/usr/bin/podman stop --ignore "freeipa-{{ ipa_container_type }}" -t 10
+KillMode=no
+User={{ ipa_container_podman_user }}
+Group={{ ipa_container_podman_group }}
+TimeoutStartSec=180
+Type=forking
+
+[Install]
+WantedBy=multi-user.target default.target

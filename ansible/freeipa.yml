@@ -1,0 +1,4 @@
+---
+- hosts: ipaservers
+  roles:
+  - ipa-container

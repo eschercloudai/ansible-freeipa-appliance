@@ -1,0 +1,13 @@
+[ipaprimary]
+[ipareplicas]
+
+
+[ipaservers:children]
+ipaprimary
+ipareplicas
+
+[podman:children]
+ipaservers
+
+[etc_hosts:children]
+ipaservers

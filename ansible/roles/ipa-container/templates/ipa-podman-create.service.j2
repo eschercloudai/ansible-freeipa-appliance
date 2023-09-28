@@ -1,0 +1,33 @@
+# ipa-podman.service
+
+[Unit]
+Description=Podman container-freeipa-{{ ipa_container_type }}.service
+Documentation=man:podman-generate-systemd(1)
+Wants=network.target
+After=network-online.target 
+
+
+[Service]
+Environment=PODMAN_SYSTEMD_UNIT=%n
+Restart=on-failure
+RestartSec=10s
+ExecStart=/usr/bin/podman run \
+  --name="freeipa-{{ipa_container_type}}" \
+  --detach=true \
+  --restart=no \
+  #--recreate \
+  --network=host \
+  --volume="/etc/localtime:/etc/localtime:ro" \
+  --volume="/sys/fs/cgroup:/sys/fs/cgroup:ro" \
+  --volume="{{ ipa_container_state_path }}:/data:Z" \
+  --detach=True \
+  {{ ipa_container_remote }} {{ ipa_container_create_commands[ipa_container_type] | join(" \\\n    ") }}
+ExecStop=/usr/bin/podman stop --ignore freeipa-{{ ipa_container_type }} -t 10
+KillMode=no
+User={{ ipa_container_podman_user }}
+Group={{ ipa_container_podman_group }}
+TimeoutStartSec=180
+Type=forking
+
+[Install]
+WantedBy=multi-user.target default.target

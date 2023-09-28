@@ -1,0 +1,9 @@
+---
+
+- name: Restart ipa-podman container
+  systemd:
+    name: ipa-podman.service
+    state: restarted
+    enabled: yes
+    daemon_reload: yes
+  become: true
