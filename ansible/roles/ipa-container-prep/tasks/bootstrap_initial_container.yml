@@ -5,7 +5,7 @@
   when: ansible_fqdn != ipa_container_fqdn
   become: true
 
-# we just pass the passwords in via commandline for now I will fixe this soon
+# we just pass the passwords in via commandline for now I will fix this soon
 - name: bootstrap freeipa {{ipa_container_type}} container
   containers.podman.podman_container:
     name: freeipa-{{ipa_container_type}}-bootstrap
@@ -14,6 +14,7 @@
     restart_policy: "no"
     recreate: false
     rm: false
+    cap_add: "{{ ipa_container_cap_list }}"
     user: root
     network: host
     state: started

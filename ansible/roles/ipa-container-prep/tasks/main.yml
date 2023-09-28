@@ -1,0 +1,40 @@
+---
+############### validate!
+- name: make sure that no hosts in the ipaprimary group are in the ipareplica group too
+  ansible.builtin.assert:
+    that:
+      - not(inventory_hostname in groups['ipaprimary'] and inventory_hostname  in groups['ipareplicas'])
+
+
+- name: check if we have previous restore state
+  ansible.builtin.stat:
+    path: "{{ ipa_container_state_path }}/var/lib/ipa/sysrestore/sysrestore.state"
+  register: existing_ipa_data
+
+
+# do stuff
+- name: copy ipa_install monitor script
+  ansible.builtin.copy:
+    src: monitor_ipa_install.sh
+    dest: /root/monitor_ipa_install.sh
+    owner: root
+    group: root
+    mode: '0755'
+  become: true
+
+# TODO check for working replicas before we do this and promote one and sync to this if needed
+- name: bootstrap primary
+  ansible.builtin.include_tasks: bootstrap_initial_container.yml
+  tags:
+    - ipa-primary-bootstrap
+  when:
+    - ipa_container_force_bootstrap or not existing_ipa_data.stat.exists | bool
+    - inventory_hostname in groups['ipaprimary']
+
+- name: bootstrap replica(s)
+  ansible.builtin.include_tasks: bootstrap_initial_container.yml
+  when:
+    - not existing_ipa_data.stat.exists | bool
+    - inventory_hostname in groups['ipareplicas']
+  tags:
+    - ipa-replica-bootstrap

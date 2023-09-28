@@ -1,4 +1,62 @@
 ---
+# this role was going to do the lot but now we just prepare the state
 - hosts: ipaservers
   roles:
-  - ipa-container
+  - ipa-container-prep
+
+
+- hosts: ipaservers
+  serial: 1
+  tasks:
+    - name: remove freeipa {{ipa_container_type}} bootstrap container
+      containers.podman.podman_container:
+        name: "freeipa-{{ipa_container_type}}-bootstrap"
+        state: absent
+      become: true
+
+    # the following will create but not start the containers
+    # this  MUST but started from systemd or you run the risk of a synchronised restart which is what we are trying to avoid at all costs
+    - name: ensure freeipa containers are present
+      containers.podman.podman_container:
+        name: "freeipa-{{ipa_container_type}}"
+        detach: true
+        recreate: false
+        image: "{{ ipa_container_remote }}"
+        restart_policy: "no"
+        rm: false
+        cap_add: "{{ ipa_container_cap_list }}"
+        user: root
+        network: host
+        state: present
+        volume: "{{ ipa_container_volume_list }}"
+        command: "{{ ipa_container_create_commands[ipa_container_type] }}"
+      become: true
+      register: ipa_container
+
+    - name: Create systemd unit file
+      ansible.builtin.template:
+        dest: /usr/lib/systemd/system/ipa-podman.service
+        src: "{{ ipa_appliance_template_path }}/ipa-podman.service.j2"
+      become: true
+      notify:
+        - reload systemd units
+        - enable ipa-podman container
+
+    - name: ensure ipa-podman service is in desired state
+      ansible.builtin.systemd:
+        name: ipa-podman
+        state: "{{ ipa_container_service_state }}"
+      become: true
+
+    - name: wait for service to start
+      ansible.builtin.command: "/root/monitor_ipa_install.sh freeipa-{{ipa_container_type}}"
+      register: result
+      until: result.rc<2
+      failed_when: "'stop waiting and fail' in result.stderr"
+      #changed_when: "'FreeIPA server configured' in result.stdout"
+      retries: 120
+      delay: 5
+      become: true
+      when:
+        - not ipa_container['container']['State']['Running'] | bool
+        - ipa_container_service_state == 'started'

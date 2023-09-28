@@ -22,7 +22,7 @@ ipa_container_default_volume_list:
   - '/etc/localtime:/etc/localtime:ro'
 ipa_container_extra_volume_list: []
 ipa_container_volume_list: "{{ ipa_container_default_volume_list +  ipa_container_extra_volume_list }}"
-
+ipa_container_force_bootstrap: false
 
 ipa_container_bootstrap_commands:
   primary:
@@ -58,33 +58,34 @@ ipa_container_bootstrap_commands:
     - --no-ui-redirect
     - --ip-address={{ ipa_container_ip }}
     - --unattended
-
+ipa_container_cap_list:
+  - 'SYS_TIME'
+  - 'NET_ADMIN'
 # these do NOT have the password in as this has already been stored in the data volume during the bootstrap
 ipa_container_create_commands:
   primary:
-    - /usr/sbin/ipa-server-configure-first upgrade
-    #- ipa-server-install
-    # - --realm
-    # - "{{ ipa_container_realm }}"
-    # - --domain
-    # - "{{ ipa_container_domain }}"
-    # - --setup-dns
-    # - --auto-reverse
-    # - --auto-forwarders
-    # - --no-ui-redirect
+     - ipa-server-install
+     - --realm
+     - "{{ ipa_container_realm }}"
+     - --domain
+     - "{{ ipa_container_domain }}"
+     - --setup-dns
+     - --auto-reverse
+     - --auto-forwarders
+     - --no-ui-redirect
     # - --unattended
   replica:
     - ipa-replica-install
-    #- --setup-ca
-    # - --principal=admin
-    # - "{{ '--server='+hostvars[groups['ipaprimary']|first]['ipa_container_fqdn'] }}"
-    # - --realm
-    # - "{{ ipa_container_realm }}"
-    # - --domain
-    # - "{{ ipa_container_domain }}"
-    # - --setup-dns
-    # - --auto-reverse
-    # - --auto-forwarders
-    # - --no-ui-redirect
-    # - --ip-address={{ ipa_container_ip }}
+    - --setup-ca
+    - --principal=admin
+    - "{{ '--server='+hostvars[groups['ipaprimary']|first]['ipa_container_fqdn'] }}"
+    - --realm
+    - "{{ ipa_container_realm }}"
+    - --domain
+    - "{{ ipa_container_domain }}"
+    - --setup-dns
+    - --auto-reverse
+    - --auto-forwarders
+    - --no-ui-redirect
+    - --ip-address={{ ipa_container_ip }}
     # - --unattended
