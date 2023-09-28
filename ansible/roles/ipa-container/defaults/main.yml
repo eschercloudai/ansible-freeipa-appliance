@@ -1,5 +1,5 @@
 ---
-ipa_container_type: primary
+ipa_container_type: "primary"
 # when we want to update the container, set this to be true not implemented yet
 # we would need to rerun the container create step I think using a diffferent ipaserver container tag/uuid
 ipa_container_update: false
@@ -15,6 +15,14 @@ ipa_container_state_path: "/var/lib/state"
 ipa_container_ip: "{{ ansible_host }}"
 # default to a started service, you never know someone might want it stopped. . . so add override here
 ipa_container_service_state: "started"
+
+ipa_container_default_volume_list:
+  - '/var/lib/state:/data:Z'
+  - 'cgroup:/sys/fs/cgroup'
+  - '/etc/localtime:/etc/localtime:ro'
+ipa_container_extra_volume_list: []
+ipa_container_volume_list: "{{ ipa_container_default_volume_list +  ipa_container_extra_volume_list }}"
+
 
 ipa_container_bootstrap_commands:
   primary:
@@ -54,7 +62,8 @@ ipa_container_bootstrap_commands:
 # these do NOT have the password in as this has already been stored in the data volume during the bootstrap
 ipa_container_create_commands:
   primary:
-    - ipa-server-install
+    - /usr/sbin/ipa-server-configure-first upgrade
+    #- ipa-server-install
     # - --realm
     # - "{{ ipa_container_realm }}"
     # - --domain

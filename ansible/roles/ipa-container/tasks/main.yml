@@ -8,7 +8,7 @@
   ansible.builtin.stat:
     path: "{{ ipa_container_state_path }}/var/lib/ipa/sysrestore/sysrestore.state"
   register: existing_ipa_data
-  
+
 - name: copy ipa_install monitor script
   ansible.builtin.copy:
     src: monitor_ipa_install.sh
@@ -17,18 +17,18 @@
     group: root
     mode: '0755'
   become: true
-  
+
 - name: bootstrap primary
   ansible.builtin.include_tasks: bootstrap_initial_container.yml
   tags:
     - ipa-primary-bootstrap
-  when: 
+  when:
     - not existing_ipa_data.stat.exists | bool
     - inventory_hostname in groups['ipaprimary']
 
 - name: bootstrap replica(s)
   ansible.builtin.include_tasks: bootstrap_initial_container.yml
-  when: 
+  when:
     - not existing_ipa_data.stat.exists | bool
     - inventory_hostname in groups['ipareplicas']
   tags:
@@ -40,10 +40,11 @@
     state: absent
   become: true
 
-
-- name: ensure freeipa container in started
+# the following will create but not start the containers
+# this  MUST but started from systemd or you run the risk of a synchronised restart which is what we are trying to avoid at all costs
+- name: ensure freeipa containers are present
   containers.podman.podman_container:
-    name: freeipa-{{ipa_container_type}}
+    name: "freeipa-{{ipa_container_type}}"
     detach: true
     recreate: false
     image: "{{ ipa_container_remote }}"
@@ -51,28 +52,24 @@
     rm: false
     user: root
     network: host
-    state: started 
-    volume:
-      - /var/lib/state:/data:Z
-      - /etc/localtime:/etc/localtime:ro
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    state: present
+    volume: "{{ ipa_container_volume_list }}"
     command: "{{ ipa_container_create_commands[ipa_container_type] }}"
   become: true
   register: ipa_container
-
-- debug:
-    var: ipa_container
 
 - name: Create systemd unit file
   ansible.builtin.template:
     dest: /usr/lib/systemd/system/ipa-podman.service
     src: ipa-podman.service.j2
   become: true
-  notify: Restart ipa-podman container
+  notify:
+    - reload systemd units
+    - enable ipa-podman container
 
+- debug:
+    var: ipa_container['container']['State']
 
-- ansible.builtin.meta: flush_handlers
-  
 - name: ensure ipa-podman service is in desired state
   ansible.builtin.systemd:
     name: ipa-podman

@@ -17,10 +17,7 @@
     user: root
     network: host
     state: started
-    volume:
-      - /var/lib/state:/data:Z
-      - /etc/localtime:/etc/localtime:ro
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    volume: "{{ ipa_container_volume_list }}"
     command: "{{ ipa_container_bootstrap_commands[ipa_container_type] }}"
   become: true
   register: ipa_container

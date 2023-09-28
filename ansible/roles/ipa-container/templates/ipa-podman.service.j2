@@ -12,7 +12,7 @@ Environment=PODMAN_SYSTEMD_UNIT=%n
 Restart=on-failure
 RestartSec=10s
 ExecStart=/usr/bin/podman start  "freeipa-{{ipa_container_type}}"
-ExecStop=/usr/bin/podman stop --ignore "freeipa-{{ ipa_container_type }}" -t 10
+ExecStop=/usr/bin/podman stop --ignore "freeipa-{{ ipa_container_type }}" -t 30
 KillMode=no
 User={{ ipa_container_podman_user }}
 Group={{ ipa_container_podman_group }}
