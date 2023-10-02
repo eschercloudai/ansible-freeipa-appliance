@@ -1,0 +1,4 @@
+---
+ipa_container_realm: "CLUSTER.INTERNAL"
+ipa_container_domain: "{{ ipa_container_realm | lower }}"
+ipa_container_fqdn: "{{ inventory_hostname_short }}.{{ ipa_container_domain }}"
