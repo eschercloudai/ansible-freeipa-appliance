@@ -39,8 +39,8 @@
   tags:
     - ipa-replica-bootstrap
     
-  - name: remove freeipa {{ipa_container_type}} bootstrap container
-    containers.podman.podman_container:
-      name: "freeipa-{{ipa_container_type}}-bootstrap"
-      state: absent
-    become: true
+- name: remove freeipa {{ipa_container_type}} bootstrap container
+  containers.podman.podman_container:
+    name: "freeipa-{{ipa_container_type}}-bootstrap"
+    state: absent
+  become: true
