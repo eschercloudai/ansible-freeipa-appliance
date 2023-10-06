@@ -6,6 +6,16 @@
         that: groups['ipaprimary'] | length
         fail_msg: "no hosts found in group 'ipaprimary' - has ipaprimary node been deployed?"
 
+- name: Ensure ipaprimary node is in inventory
+  hosts: ipaservers
+  tasks:
+    - assert:
+        that: ipa_container_realm != ''
+        fail_msg: "ipa_container_realm is null this must be seta and all in CAPS"
+    - assert:
+        that: ipa_container_domain != ''
+        fail_msg: "ipa_container_domain is null this must be set to the expected dns suffix e.g. cluster.internal if the nodes are expeced to be node01.cluster.internal and all in lowercase"
+
 - name: Validate podman configuration
   hosts: podman
   tags: podman
