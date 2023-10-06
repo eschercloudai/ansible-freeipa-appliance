@@ -1,4 +1,4 @@
 ---
-ipa_container_realm: "CLUSTER.INTERNAL"
-ipa_container_domain: "{{ ipa_container_realm | lower }}"
+ipa_container_realm: "{{ ipa_cluster_suffix | upper }}"
+ipa_container_domain: "{{ ipa_cluster_suffix | lower }}"
 ipa_container_fqdn: "{{ inventory_hostname_short }}.{{ ipa_container_domain }}"

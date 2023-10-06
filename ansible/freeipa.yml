@@ -74,3 +74,7 @@
       systemd:
         daemon_reload: yes
       become: true
+# this last one just points the ipa servers at themselves
+- hosts: ipaservers
+  roles:
+  - resolv_conf
