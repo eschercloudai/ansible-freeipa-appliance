@@ -1,6 +1,7 @@
 # Created by slurm appliance ansible/roles/resolv_conf
-search {{ openhpc_cluster_name }}.{{ tld }}
 
-{% for ns in resolv_conf_nameservers[0:3] %}
+search {{ resolv_conf_search }}
+
+{% for ns in resolv_conf_nameservers %}
 nameserver {{ ns }}
 {% endfor %}

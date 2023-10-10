@@ -27,3 +27,7 @@ appliances_local_users_extra: [] # see format of appliances_local_users_default 
 appliances_local_users: "{{ appliances_local_users_default + appliances_local_users_extra }}"
 
 ipa_container_state_path: "/var/lib/state"
+
+# these get appended to the list of ipa servers in the vm in case the internal ones are stopped
+ipa_servers_extra:
+  - 8.8.8.8

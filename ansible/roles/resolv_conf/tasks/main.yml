@@ -1,7 +1,3 @@
-- name: Read nameservers from /etc/resolv.conf
-  ansible.builtin.slurp:
-    src: /etc/resolv.conf
-  register: _slurp_resolv_conf
 
 - name: Set nameservers in /etc/resolv.conf
   # Might need to set this for freeipa_server host, but freeipa server install
@@ -12,7 +8,6 @@
     owner: root
     group: root
     mode: u=rw,og=r
-  when: "'127.0.0.1' not in (_slurp_resolv_conf.content | b64decode)"
 
 - name: Disable NetworkManager control of resolv.conf
   ansible.builtin.copy:

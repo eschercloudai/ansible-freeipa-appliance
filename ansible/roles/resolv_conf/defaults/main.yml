@@ -1,1 +1,6 @@
-resolv_conf_nameservers: []
+resolv_conf_nameservers:
+  - 8.8.8.8
+  - 8.8.4.4
+resolv_conf_search: localdomain.internal
+
+

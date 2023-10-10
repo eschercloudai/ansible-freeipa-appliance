@@ -1,11 +1,13 @@
 ---
 # this role was going to do the lot but now we just prepare the state
 - hosts: ipaservers
+  gather_facts: yes
   roles:
   - ipa-container-prep
 
 
 - hosts: ipaservers
+  gather_facts: no
   serial: 1
   tasks:
     # This is intentionally repeated in case something went wrong and it wasn't deleted at the end of the bootstrap
@@ -56,7 +58,7 @@
       until: result.rc<2
       failed_when: "'stop waiting and fail' in result.stderr"
       #changed_when: "'FreeIPA server configured' in result.stdout"
-      retries: 120
+      retries: 60 # 5 mins this should be pretty quick even doing an update
       delay: 5
       become: true
       when:
@@ -74,7 +76,12 @@
       systemd:
         daemon_reload: yes
       become: true
+
 # this last one just points the ipa servers at themselves
 - hosts: ipaservers
+  gather_facts: no 
+  become: true
   roles:
-  - resolv_conf
+  - role: resolv_conf
+    resolv_conf_search: "{{ ipa_container_domain }}"
+    resolv_conf_nameservers: "{{ ipa_servers_default + ipa_servers_extra }}"

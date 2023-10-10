@@ -38,9 +38,16 @@
     - inventory_hostname in groups['ipareplicas']
   tags:
     - ipa-replica-bootstrap
-    
+
 - name: remove freeipa {{ipa_container_type}} bootstrap container
   containers.podman.podman_container:
     name: "freeipa-{{ipa_container_type}}-bootstrap"
     state: absent
   become: true
+
+- name: populate ipa_servers
+  set_fact:
+    ipa_servers_default:  "{{ ipa_servers_default | default(['127.0.0.1']) + hostvars[item]['ansible_all_ipv4_addresses'] | ansible.utils.reduce_on_network(ipa_cluster_cidr) }}"
+  loop: "{{ groups['ipaservers'] }}"
+  when: "item != ansible_hostname"
+
