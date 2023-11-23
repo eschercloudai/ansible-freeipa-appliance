@@ -13,6 +13,7 @@ ipa_container_ip: "{{ ansible_host }}"
 # default to a started service, you never know someone might want it stopped. . . so add override here
 ipa_container_service_state: "started"
 
+
 ipa_container_default_volume_list:
   - '/var/lib/state:/data:Z'
   - 'cgroup:/sys/fs/cgroup'

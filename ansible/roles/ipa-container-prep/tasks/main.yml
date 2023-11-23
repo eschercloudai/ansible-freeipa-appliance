@@ -45,9 +45,9 @@
     state: absent
   become: true
 
-- name: populate ipa_servers
+- name: extend ipa_servers_default with other nodes in the ipaservers group
   set_fact:
-    ipa_servers_default:  "{{ ipa_servers_default | default(['127.0.0.1']) + hostvars[item]['ansible_all_ipv4_addresses'] | ansible.utils.reduce_on_network(ipa_cluster_cidr) }}"
+    ipa_servers_default:  "{{ ipa_servers_default + hostvars[item]['ansible_all_ipv4_addresses'] | ansible.utils.reduce_on_network(ipa_cluster_cidr) }}"
   loop: "{{ groups['ipaservers'] }}"
   when: "item != ansible_hostname"
 

@@ -29,5 +29,8 @@ appliances_local_users: "{{ appliances_local_users_default + appliances_local_us
 ipa_container_state_path: "/var/lib/state"
 
 # these get appended to the list of ipa servers in the vm in case the internal ones are stopped
+#the playbook will extend this with the rest of the ips
+ipa_servers_default:
+  - 127.0.0.1
 ipa_servers_extra:
   - 8.8.8.8
