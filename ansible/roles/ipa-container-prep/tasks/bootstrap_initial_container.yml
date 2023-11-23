@@ -1,0 +1,35 @@
+---
+# this is in here as we do not waant to mess with this after creating the freeipa cluster
+- name: set hostname to fqdn (we will set hosts later)
+  ansible.builtin.command: "hostnamectl set-hostname {{ ipa_container_fqdn }}"
+  when: ansible_fqdn != ipa_container_fqdn
+  become: true
+
+# we just pass the passwords in via commandline for now I will fix this soon
+- name: bootstrap freeipa {{ipa_container_type}} container
+  containers.podman.podman_container:
+    name: freeipa-{{ipa_container_type}}-bootstrap
+    detach: true
+    image: "{{ ipa_container_remote }}"
+    restart_policy: "no"
+    recreate: false
+    rm: false
+    cap_add: "{{ ipa_container_cap_list }}"
+    user: root
+    network: host
+    state: started
+    volume: "{{ ipa_container_volume_list }}"
+    command: "{{ ipa_container_bootstrap_commands[ipa_container_type] }}"
+  become: true
+  register: ipa_container
+
+- name: wait for initial install to complete
+  ansible.builtin.command: "/root/monitor_ipa_install.sh {{ ipa_container['container']['Id'] }}"
+  register: result
+  until: result.rc<2
+  failed_when: "'stop waiting and fail' in result.stderr"
+  changed_when: "'FreeIPA server configured' in result.stdout"
+  retries: 120
+  delay: 5
+  become: true
+

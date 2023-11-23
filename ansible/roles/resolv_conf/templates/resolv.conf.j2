@@ -1,0 +1,7 @@
+# Created by slurm appliance ansible/roles/resolv_conf
+
+search {{ resolv_conf_search }}
+
+{% for ns in resolv_conf_nameservers %}
+nameserver {{ ns }}
+{% endfor %}

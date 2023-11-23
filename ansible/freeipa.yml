@@ -1,0 +1,87 @@
+---
+# this role was going to do the lot but now we just prepare the state
+- hosts: ipaservers
+  gather_facts: yes
+  roles:
+  - ipa-container-prep
+
+
+- hosts: ipaservers
+  gather_facts: no
+  serial: 1
+  tasks:
+    # This is intentionally repeated in case something went wrong and it wasn't deleted at the end of the bootstrap
+    # that code will not re-run if the state file exists so remove this at your peril
+    - name: remove freeipa {{ipa_container_type}} bootstrap container
+      containers.podman.podman_container:
+        name: "freeipa-{{ipa_container_type}}-bootstrap"
+        state: absent
+      become: true
+
+    # the following will create but not start the containers
+    # this  MUST but started from systemd or you run the risk of a synchronised restart which is what we are trying to avoid at all costs
+    - name: ensure freeipa containers are present
+      containers.podman.podman_container:
+        name: "freeipa-{{ipa_container_type}}"
+        detach: true
+        recreate: false
+        image: "{{ ipa_container_remote }}"
+        restart_policy: "no"
+        rm: false
+        cap_add: "{{ ipa_container_cap_list }}"
+        user: root
+        network: host
+        state: present
+        volume: "{{ ipa_container_volume_list }}"
+        command: "{{ ipa_container_create_commands[ipa_container_type] }}"
+      become: true
+      register: ipa_container
+
+    - name: Create systemd unit file
+      ansible.builtin.template:
+        dest: /usr/lib/systemd/system/ipa-podman.service
+        src: "{{ ipa_appliance_template_path }}/ipa-podman.service.j2"
+      become: true
+      notify:
+        - reload systemd units
+        - enable ipa-podman container
+
+    - name: ensure ipa-podman service is in desired state
+      ansible.builtin.systemd:
+        name: ipa-podman
+        state: "{{ ipa_container_service_state }}"
+      become: true
+
+    - name: wait for service to start
+      ansible.builtin.command: "/root/monitor_ipa_install.sh freeipa-{{ipa_container_type}}"
+      register: result
+      until: result.rc<2
+      failed_when: "'stop waiting and fail' in result.stderr"
+      #changed_when: "'FreeIPA server configured' in result.stdout"
+      retries: 60 # 5 mins this should be pretty quick even doing an update
+      delay: 5
+      become: true
+      when:
+        - not ipa_container['container']['State']['Running'] | bool
+        - ipa_container_service_state == 'started'
+  
+  handlers:
+    - name: enable ipa-podman container
+      systemd:
+        name: ipa-podman.service
+        enabled: yes
+      become: true
+
+    - name: reload systemd units
+      systemd:
+        daemon_reload: yes
+      become: true
+
+# this last one just points the ipa servers at themselves
+- hosts: ipaservers
+  gather_facts: no 
+  become: true
+  roles:
+  - role: resolv_conf
+    resolv_conf_search: "{{ ipa_container_domain }}"
+    resolv_conf_nameservers: "{{ ipa_servers_default + ipa_servers_extra }}"

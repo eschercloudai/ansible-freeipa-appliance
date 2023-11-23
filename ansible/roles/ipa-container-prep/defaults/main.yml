@@ -1,0 +1,89 @@
+---
+ipa_container_type: "primary"
+# when we want to update the container, set this to be true not implemented yet
+# we would need to rerun the container create step I think using a diffferent ipaserver container tag/uuid
+ipa_container_update: false
+ipa_container_tag: rocky-9
+ipa_container_podman_user: root
+ipa_container_podman_group: root
+ipa_container_remote: "docker.io/freeipa/freeipa-server:{{ ipa_container_tag }}"
+ipa_container_runtime_args: ""
+ipa_container_state_path: "/var/lib/state"
+ipa_container_ip: "{{ ansible_host }}"
+# default to a started service, you never know someone might want it stopped. . . so add override here
+ipa_container_service_state: "started"
+
+
+ipa_container_default_volume_list:
+  - '/var/lib/state:/data:Z'
+  - 'cgroup:/sys/fs/cgroup'
+  - '/etc/localtime:/etc/localtime:ro'
+ipa_container_extra_volume_list: []
+ipa_container_volume_list: "{{ ipa_container_default_volume_list +  ipa_container_extra_volume_list }}"
+ipa_container_force_bootstrap: false
+
+ipa_container_bootstrap_commands:
+  primary:
+    - ipa-server-install
+    - --realm
+    - "{{ ipa_container_realm }}"
+    - --domain
+    - "{{ ipa_container_domain }}"
+    - --setup-dns
+    - --auto-reverse
+    - --auto-forwarders
+#    - --no-ui-redirect
+    - --ds-password
+    - "{{ hostvars[groups['openstack'][0]]['vault_ipa_ds_password'] }}"
+    - --admin-password
+    - "{{ hostvars[groups['openstack'][0]]['vault_ipa_admin_password'] }}"
+    - --ip-address={{ ipa_container_ip }}
+    - --unattended
+  replica:
+    - ipa-replica-install
+    - --setup-ca
+    - --principal=admin
+    - "{{ '--server='+hostvars[groups['ipaprimary']|first]['ipa_container_fqdn'] }}"
+    - --realm
+    - "{{ ipa_container_realm }}"
+    - --domain
+    - "{{ ipa_container_domain }}"
+    - --admin-password
+    - "{{ hostvars[groups['openstack'][0]]['vault_ipa_admin_password'] }}"
+    - --setup-dns
+    - --auto-reverse
+    - --auto-forwarders
+#    - --no-ui-redirect
+    - --ip-address={{ ipa_container_ip }}
+    - --unattended
+ipa_container_cap_list:
+  - 'SYS_TIME'
+  - 'NET_ADMIN'
+# these do NOT have the password in as this has already been stored in the data volume during the bootstrap
+ipa_container_create_commands:
+  primary:
+     - ipa-server-install
+     - --realm
+     - "{{ ipa_container_realm }}"
+     - --domain
+     - "{{ ipa_container_domain }}"
+     - --setup-dns
+     - --auto-reverse
+     - --auto-forwarders
+     - --no-ui-redirect
+    # - --unattended
+  replica:
+    - ipa-replica-install
+    - --setup-ca
+    - --principal=admin
+    - "{{ '--server='+hostvars[groups['ipaprimary']|first]['ipa_container_fqdn'] }}"
+    - --realm
+    - "{{ ipa_container_realm }}"
+    - --domain
+    - "{{ ipa_container_domain }}"
+    - --setup-dns
+    - --auto-reverse
+    - --auto-forwarders
+    - --no-ui-redirect
+    - --ip-address={{ ipa_container_ip }}
+    # - --unattended

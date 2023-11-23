@@ -1,0 +1,7 @@
+---
+ipa_container_ip: "{{ ansible_host }}" # with the caas plugin this is normally the internal ip this may need fudging
+
+etc_hosts_hostvars:
+  - ansible_host
+  - ipa_container_fqdn
+  - inventory_hostname

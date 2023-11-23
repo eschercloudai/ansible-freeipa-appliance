@@ -1,0 +1,36 @@
+---
+#misc
+ansible_user: rocky
+appliances_repository_root: "{{ lookup('env', 'APPLIANCES_REPO_ROOT') }}"
+appliances_environment_root: "{{ lookup('env', 'APPLIANCES_ENVIRONMENT_ROOT') }}"
+
+appliances_local_users_ansible_user_name: "{{ ansible_ssh_user | default(ansible_user) }}"
+appliances_local_users_podman_uid: 1001 # UID for podman user - normally next UID after default user
+appliances_local_users_podman: # also used in environments/common/inventory/group_vars/all/podman.yml:podman_users
+    name: podman
+    comment: Used for running all containers
+    # Would like to set subuid so that we that we know what will appear in /etc/subuid
+    # See: https://github.com/ansible/ansible/issues/68199
+    home: /var/lib/podman
+    uid: "{{ appliances_local_users_podman_uid }}"
+
+appliances_local_users_default:
+    - user:
+        name: "{{ appliances_local_users_ansible_user_name }}"
+        #home: /home/{{ appliances_local_users_ansible_user_name }}
+        #move_home: true
+        local: true
+    - user: "{{ appliances_local_users_podman }}"
+      enable: "{{ 'podman' in group_names }}"
+
+appliances_local_users_extra: [] # see format of appliances_local_users_default above
+appliances_local_users: "{{ appliances_local_users_default + appliances_local_users_extra }}"
+
+ipa_container_state_path: "/var/lib/state"
+
+# these get appended to the list of ipa servers in the vm in case the internal ones are stopped
+#the playbook will extend this with the rest of the ips
+ipa_servers_default:
+  - 127.0.0.1
+ipa_servers_extra:
+  - 8.8.8.8
